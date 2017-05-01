@@ -14,6 +14,8 @@ _time_prev = time.time() * 1000.0
 _fps = dsp.ExpFilter(val=config.FPS, alpha_decay=0.2, alpha_rise=0.2)
 """The low-pass filter used to estimate frames-per-second"""
 
+_silence = True
+
 
 def frames_per_second():
     """Return the estimated frames per second
@@ -189,7 +191,7 @@ prev_fps_update = time.time()
 
 
 def microphone_update(audio_samples):
-    global y_roll, prev_rms, prev_exp, prev_fps_update
+    global y_roll, prev_rms, prev_exp, prev_fps_update, _silence
     # Normalize samples between 0 and 1
     y = audio_samples / 2.0**15
     # Construct a rolling window of audio samples
@@ -199,10 +201,13 @@ def microphone_update(audio_samples):
     
     vol = np.max(np.abs(y_data))
     if vol < config.MIN_VOLUME_THRESHOLD:
-        print('No audio input. Volume below threshold. Volume:', vol)
-        led.pixels = np.tile(0, (3, config.N_PIXELS))
-        led.update()
+        if not _silence:
+          print('No audio input. Volume below threshold. Volume:', vol) # only print the warning once
+          _silence = True
+        #led.pixels = np.tile(0, (3, config.N_PIXELS))
+        #led.update()
     else:
+        _silence = False
         # Transform audio input into the frequency domain
         N = len(y_data)
         N_zeros = 2**int(np.ceil(np.log2(N))) - N
