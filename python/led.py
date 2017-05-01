@@ -4,11 +4,17 @@ from __future__ import division
 import platform
 import numpy as np
 import config
+import ChromaPy as Chroma
 
 # ESP8266 uses WiFi communication
 if config.DEVICE == 'esp8266':
     import socket
     _sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    mp = Chroma.Mousepad()
+    mm = Chroma.Mouse()
+    hs = Chroma.Headset()
+    Chroma.resetEffect()
+
 # Raspberry Pi controls the LED strip directly
 elif config.DEVICE == 'pi':
     import neopixel
@@ -82,6 +88,25 @@ def _update_esp8266():
         _sock.sendto(m, (config.UDP_IP, config.UDP_PORT))
     _prev_pixels = np.copy(p)
 
+def _update_chroma():
+    global pixels, _prev_pixels
+    rr = pixels[0].reshape(15,4).mean(1).astype(int)
+    gg = pixels[1].reshape(15,4).mean(1).astype(int)
+    bb = pixels[2].reshape(15,4).mean(1).astype(int)
+    #p = _gamma[pixels] if config.SOFTWARE_GAMMA_CORRECTION else np.copy(pixels)
+    for i in range(0,15):
+      mp.setbyLED(i,(rr[i-1],gg[i-1],bb[i-1]))
+    mp.applyLED()
+
+    for i in range(0,7):
+      mm.setbyGrid(0,i+1,(rr[i],gg[i],bb[i]))
+    for i in range(7,15):
+      mm.setbyGrid(6,7-(i-7)+1,(rr[i],gg[i],bb[i]))
+    mm.setbyGrid(3,2,(rr[0], gg[0], bb[0]))
+    mm.applyGrid()
+
+    hs.resetEffect()
+    hs.setColor((rr[0], gg[0], bb[0]))
 
 def _update_pi():
     """Writes new LED values to the Raspberry Pi's LED strip
@@ -139,6 +164,7 @@ def update():
     """Updates the LED strip values"""
     if config.DEVICE == 'esp8266':
         _update_esp8266()
+        _update_chroma()
     elif config.DEVICE == 'pi':
         _update_pi()
     elif config.DEVICE == 'blinkstick':
