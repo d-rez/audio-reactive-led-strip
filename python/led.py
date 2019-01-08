@@ -4,16 +4,21 @@ from __future__ import division
 import platform
 import numpy as np
 import config
-import ChromaPy as Chroma
+from ChromaPython import ChromaApp, ChromaAppInfo, ChromaColor, Colors
 
 # ESP8266 uses WiFi communication
 if config.DEVICE == 'esp8266':
     import socket
     _sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    mp = Chroma.Mousepad()
-    mm = Chroma.Mouse()
-    hs = Chroma.Headset()
-    Chroma.resetEffect()
+    Info = ChromaAppInfo
+    Info.DeveloperName = 'd-rez'
+    Info.DeveloperContact = 'dark.skeleton@gmail.com'
+    Info.Category = 'application'
+    Info.SupportedDevices = ['keyboard', 'mouse', 'mousepad', 'headset']
+    Info.Description = 'Oh Rick, I don\'t know if that\'s a good idea.'
+    Info.Title = 'Audio Reactive Chroma-extended LED strip'
+
+    App = ChromaApp(Info)
 
 # Raspberry Pi controls the LED strip directly
 elif config.DEVICE == 'pi':
@@ -46,6 +51,11 @@ _prev_pixels = np.tile(253, (3, config.N_PIXELS))
 pixels = np.tile(1, (3, config.N_PIXELS))
 """Pixel values for the LED strip"""
 
+KeyboardGrid = [[ChromaColor(red=0, green=0, blue=0) for x in range(App.Keyboard.MaxColumn)] for y in range(App.Keyboard.MaxRow)]
+KeypadGrid = [[ChromaColor(red=0, green=0, blue=0) for x in range(App.Keypad.MaxColumn)] for y in range(App.Keypad.MaxRow)]
+MousepadGrid = [ChromaColor(red=0, green=0, blue=0) for x in range(App.Mousepad.MaxLED)]
+
+chroma_rate_counter = 0
 _is_python_2 = int(platform.python_version_tuple()[0]) == 2
 
 def _update_esp8266():
@@ -88,25 +98,62 @@ def _update_esp8266():
         _sock.sendto(m, (config.UDP_IP, config.UDP_PORT))
     _prev_pixels = np.copy(p)
 
-def _update_chroma():
-    global pixels, _prev_pixels
+def _update_chroma_scaled():
+    """
+    This function runs Chroma at scaled resolution.
+    Every device will display the exact same section of the LED strip's spectrum, scaled down to each device's size
+    This is my old implementation
+    """
+    global chroma_rate_counter, KeyboardGrid
+    chroma_rate_counter = (chroma_rate_counter+1) % 2
+    if chroma_rate_counter != 1:
+      return
+    global pixels, _prev_pixels, KeyboardGrid, KeypadGrid
+
     rr = pixels[0].reshape(15,4).mean(1).astype(int)
     gg = pixels[1].reshape(15,4).mean(1).astype(int)
     bb = pixels[2].reshape(15,4).mean(1).astype(int)
-    #p = _gamma[pixels] if config.SOFTWARE_GAMMA_CORRECTION else np.copy(pixels)
-    for i in range(0,15):
-      mp.setbyLED(i,(rr[i-1],gg[i-1],bb[i-1]))
-    mp.applyLED()
+    mid = int(len(rr)/2)
+
+    for i in range(15):
+      App.Mousepad.setPosition(x=i,color=ChromaColor(red=rr[i], blue=bb[i], green=gg[i]))
+    App.Mousepad.applyGrid()
 
     for i in range(0,7):
-      mm.setbyGrid(0,i+1,(rr[i],gg[i],bb[i]))
+      App.Mouse.setPosition(x=0,y=i+1,color=ChromaColor(red=rr[i], green=gg[i], blue=bb[i]))
     for i in range(7,15):
-      mm.setbyGrid(6,7-(i-7)+1,(rr[i],gg[i],bb[i]))
-    mm.setbyGrid(3,2,(rr[0], gg[0], bb[0]))
-    mm.applyGrid()
+      App.Mouse.setPosition(x=6,y=7-(i-7)+1,color=ChromaColor(red=rr[i], green=gg[i], blue=bb[i]))
+    App.Mouse.setPosition(x=3,y=2,color=ChromaColor(red=rr[mid], green=gg[mid], blue=bb[mid]))
+    App.Mouse.applyGrid()
 
-    hs.resetEffect()
-    hs.setColor((rr[0], gg[0], bb[0]))
+    App.Headset.setNone()
+    HeadsetColor = ChromaColor(red=rr[mid],blue=bb[mid],green=gg[mid])
+    App.Headset.setStatic(color=HeadsetColor)
+
+    # rescale to 20 for TKL keyboard
+    rr = pixels[0].reshape(20,3).mean(1).astype(int)
+    gg = pixels[1].reshape(20,3).mean(1).astype(int)
+    bb = pixels[2].reshape(20,3).mean(1).astype(int)
+
+    for x in range(2,18):
+      KeyboardGrid[0][x-2].set(red=rr[x], green=gg[x], blue=bb[x])
+    App.Keyboard.setCustomGrid(KeyboardGrid)
+    App.Keyboard.applyGrid()
+    KeyboardGrid.insert(0,[ChromaColor(red=0, green=0, blue=0) for x in range(22)])
+    del KeyboardGrid[-1]
+
+    # rescale to 5 for keypads
+    rr = rr.reshape(5,4).mean(1).astype(int)
+    gg = gg.reshape(5,4).mean(1).astype(int)
+    bb = bb.reshape(5,4).mean(1).astype(int)
+
+    for x in range(0,5):
+      KeypadGrid[0][x].set(red=rr[x], green=gg[x], blue=bb[x])
+    App.Keypad.setCustomGrid(KeypadGrid)
+    App.Keypad.applyGrid()
+    KeypadGrid.insert(0,[ChromaColor(red=0, green=0, blue=0) for x in range(App.Keypad.MaxColumn)])
+    del KeypadGrid[-1]
+
 
 def _update_pi():
     """Writes new LED values to the Raspberry Pi's LED strip
