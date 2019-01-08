@@ -275,6 +275,8 @@ if __name__ == '__main__':
               scroll_click(0)
             if k == "3":
               spectrum_click(0)
+            if k == "4":
+              config.CHROMA_VISTYPE_SCALED = not config.CHROMA_VISTYPE_SCALED
 
         # Create GUI window
         app = QtGui.QApplication([])
