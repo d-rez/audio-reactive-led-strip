@@ -17,7 +17,8 @@ to control the leds connected to it.
 """
 
 if DEVICE == 'esp8266':
-    UDP_IP = '10.0.3.82'
+    UDP_IP = '10.0.13.82'
+    UDP_IP2 = '10.0.13.81'
     """IP address of the ESP8266. Must match IP in ws2812_controller.ino"""
     UDP_PORT = 7777
     """Port number used for socket communication between Python and ESP8266"""
@@ -104,3 +105,10 @@ MIN_VOLUME_THRESHOLD = 1e-7
 """No music visualization displayed if recorded audio volume below threshold"""
 
 AUDIO_SOURCE = 'loopback' # mic or loopback
+
+CHROMA_TKL_KEYBOARD = True # TenKeyless, and for laptops
+CHROMA_VISTYPE_SCALED = False # Enabling will use another function which scales Chroma efffects. Try both I guess
+DEVICES_ENABLED = { "LED_STRIP2": False,
+                    "CHROMA": True,
+                    "LIFX": True
+}
