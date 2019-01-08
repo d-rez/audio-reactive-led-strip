@@ -198,14 +198,14 @@ def microphone_update(audio_samples):
     y_roll[:-1] = y_roll[1:]
     y_roll[-1, :] = np.copy(y)
     y_data = np.concatenate(y_roll, axis=0).astype(np.float32)
-    
+
     vol = np.max(np.abs(y_data))
     if vol < config.MIN_VOLUME_THRESHOLD:
         if not _silence:
           print('No audio input. Volume below threshold. Volume:', vol) # only print the warning once
           _silence = True
-        #led.pixels = np.tile(0, (3, config.N_PIXELS))
-        #led.update()
+        led.pixels = np.tile(0, (3, config.N_PIXELS))
+        led.update()
     else:
         _silence = False
         # Transform audio input into the frequency domain
@@ -239,7 +239,7 @@ def microphone_update(audio_samples):
             b_curve.setData(y=led.pixels[2])
     if config.USE_GUI:
         app.processEvents()
-    
+
     if config.DISPLAY_FPS:
         fps = frames_per_second()
         if time.time() - 0.5 > prev_fps_update:
@@ -261,9 +261,24 @@ if __name__ == '__main__':
     if config.USE_GUI:
         import pyqtgraph as pg
         from pyqtgraph.Qt import QtGui, QtCore
+
+        class WutView(pg.GraphicsView):
+          """
+          This cute little view simply adds keyboard controls to the main frame.
+          Just press keys 1, 2 or 3 on your keyboard to switch between modes with the visualisation window focused
+          """
+          def keyPressEvent(self, event):
+            k = event.text()
+            if k == "1":
+              energy_click(0)
+            if k == "2":
+              scroll_click(0)
+            if k == "3":
+              spectrum_click(0)
+
         # Create GUI window
         app = QtGui.QApplication([])
-        view = pg.GraphicsView()
+        view = WutView()
         layout = pg.GraphicsLayout(border=(100,100,100))
         view.setCentralItem(layout)
         view.show()
