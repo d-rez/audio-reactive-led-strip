@@ -1,0 +1,46 @@
+name: vis
+channels:
+  - defaults
+dependencies:
+  - anyqt=0.0.8=py35_0
+  - blas=1.0=mkl
+  - ca-certificates=2018.03.07=0
+  - certifi=2018.4.16=py35_0
+  - icc_rt=2017.0.4=h97af966_0
+  - icu=58.2=ha66f8fd_1
+  - intel-openmp=2018.0.3=0
+  - jpeg=8d=vc14_2
+  - libpng=1.6.34=h79bbb47_0
+  - libtiff=4.0.6=vc14_2
+  - mkl=2018.0.3=1
+  - mkl_fft=1.0.1=py35h452e1ab_0
+  - mkl_random=1.0.1=py35h9258bd6_0
+  - numpy=1.14.5=py35h9fa60d3_0
+  - numpy-base=1.14.5=py35h5c71026_0
+  - openssl=1.0.2o=h8ea7d77_0
+  - pip=10.0.1=py35_0
+  - pyqt=4.11.4=py35_7
+  - pyqtgraph=0.10.0=py35_0
+  - python=3.5.3=0
+  - qt=4.8.7=vc14_9
+  - qtpy=1.4.2=py35_0
+  - scipy=1.1.0=py35h672f292_0
+  - setuptools=39.2.0=py35_0
+  - sip=4.18=py35_0
+  - sqlite=3.24.0=h7602738_0
+  - vc=14=h0510ff6_3
+  - vs2015_runtime=14.0.25420=0
+  - wheel=0.31.1=py35_0
+  - wincertstore=0.2=py35hfebbdb8_0
+  - zlib=1.2.11=h8395fce_2
+  - pip:
+    - bitstring==3.1.5
+    - chardet==3.0.4
+    - cython==0.28.4
+    - idna==2.7
+    - lifxlan==1.2.5
+    - netifaces==0.10.6
+    - pyaudio==0.2.7
+    - qtgui==0.0.1
+    - requests==2.20.1
+    - urllib3==1.24.1
